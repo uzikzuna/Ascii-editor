@@ -1,18 +1,18 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { WorkspaceLayout } from './components/layout/WorkspaceLayout';
 import { DashboardHome } from './components/dashboard/DashboardHome';
-import { ImageConverter } from './components/converters/ImageConverter';
-import { GifConverter } from './components/converters/GifConverter';
-import { VideoConverter } from './components/converters/VideoConverter';
-import { WebcamConverter } from './components/converters/WebcamConverter';
-import { ScreenCaptureConverter } from './components/converters/ScreenCaptureConverter';
-import { TextGenerator } from './components/tools/TextGenerator';
-import { AsciiEditor } from './components/tools/AsciiEditor';
-import { AnimationStudio } from './components/tools/AnimationStudio';
-import { AudioVisualizer } from './components/tools/AudioVisualizer';
-import { Settings } from './components/tools/Settings';
 import { ToastProvider, useToast } from './components/shared/Widgets';
 import type { AsciiProject } from './utils/history';
+
+// Lazy load large editor/converter files for optimal load speeds and chunking
+const ImageConverter = lazy(() => import('./components/converters/ImageConverter').then(m => ({ default: m.ImageConverter })));
+const GifConverter = lazy(() => import('./components/converters/GifConverter').then(m => ({ default: m.GifConverter })));
+const VideoConverter = lazy(() => import('./components/converters/VideoConverter').then(m => ({ default: m.VideoConverter })));
+const WebcamConverter = lazy(() => import('./components/converters/WebcamConverter').then(m => ({ default: m.WebcamConverter })));
+const ScreenCaptureConverter = lazy(() => import('./components/converters/ScreenCaptureConverter').then(m => ({ default: m.ScreenCaptureConverter })));
+const TextGenerator = lazy(() => import('./components/tools/TextGenerator').then(m => ({ default: m.TextGenerator })));
+const ProStudioWorkspace = lazy(() => import('./components/tools/ProStudioWorkspace').then(m => ({ default: m.ProStudioWorkspace })));
+const Settings = lazy(() => import('./components/tools/Settings').then(m => ({ default: m.Settings })));
 
 function AppContent() {
   const [currentPage, setCurrentPage] = useState('dashboard');
@@ -90,11 +90,14 @@ function AppContent() {
       case 'text':
         return <TextGenerator />;
       case 'editor':
-        return <AsciiEditor />;
       case 'animation':
-        return <AnimationStudio />;
       case 'visualizer':
-        return <AudioVisualizer />;
+        return (
+          <ProStudioWorkspace 
+            initialFile={transferFile} 
+            onClearInitialFile={handleClearTransferFile} 
+          />
+        );
       case 'settings':
         return (
           <Settings 
@@ -121,7 +124,14 @@ function AppContent() {
       activeTheme={activeTheme}
       onChangeTheme={handleChangeTheme}
     >
-      {renderActivePage()}
+      <Suspense fallback={
+        <div className="flex-grow flex flex-col justify-center items-center h-full text-theme-accent gap-2 bg-theme-bg">
+          <div className="w-8 h-8 rounded-full border-2 border-theme-accent border-t-transparent animate-spin" />
+          <span className="font-mono text-xs">CALIBRATING INTERFACE...</span>
+        </div>
+      }>
+        {renderActivePage()}
+      </Suspense>
     </WorkspaceLayout>
   );
 }

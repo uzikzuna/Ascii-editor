@@ -81,6 +81,22 @@ export const VideoConverter: React.FC<VideoConverterProps> = ({
   }, [isPlaying, videoSrc, options]);
 
   const loadVideoFile = (file: File) => {
+    // Validate MIME type/extension (must be video/* or standard web video formats)
+    const allowedTypes = ['video/mp4', 'video/webm', 'video/ogg', 'video/quicktime'];
+    const fileExtension = file.name.split('.').pop()?.toLowerCase();
+    const allowedExtensions = ['mp4', 'webm', 'ogg', 'mov'];
+
+    if (!allowedTypes.includes(file.type) && !allowedExtensions.includes(fileExtension || '')) {
+      showToast('Unsupported file type. Please upload an MP4, WebM, Ogg, or MOV video.', 'error');
+      return;
+    }
+
+    // Limit video size to 40MB
+    if (file.size > 40 * 1024 * 1024) {
+      showToast('Video file size is too large (maximum 40MB).', 'error');
+      return;
+    }
+
     setIsPlaying(false);
     if (videoSrc) URL.revokeObjectURL(videoSrc);
     
@@ -365,17 +381,39 @@ export const VideoConverter: React.FC<VideoConverterProps> = ({
         </div>
 
         {/* Viewport */}
-        <div className="flex-1 overflow-auto flex items-center justify-center p-6 relative">
+        <div 
+          onDragOver={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+          }}
+          onDrop={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const file = e.dataTransfer.files?.[0];
+            if (file && file.type.startsWith('video/')) loadVideoFile(file);
+          }}
+          className="flex-1 overflow-auto flex items-center justify-center p-6 relative"
+        >
           {videoSrc ? (
             <div 
               style={{ transform: `scale(${previewZoom / 100})`, transition: 'transform 0.15s cubic-bezier(0.16, 1, 0.3, 1)' }}
-              className="origin-center shadow-2xl"
+              className="origin-center shadow-2xl animate-in fade-in zoom-in-95 duration-200"
             >
               <canvas ref={previewCanvasRef} className="max-w-none shadow-[0_0_50px_rgba(0,0,0,0.8)]" />
             </div>
           ) : (
             <div 
               onClick={() => fileInputRef.current?.click()}
+              onDragOver={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+              }}
+              onDrop={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const file = e.dataTransfer.files?.[0];
+                if (file && file.type.startsWith('video/')) loadVideoFile(file);
+              }}
               className="glass border border-theme-border/40 rounded-xl p-12 text-center cursor-pointer flex flex-col items-center gap-4 max-w-md hover:bg-white/5 hover:border-theme-accent/30 transition-all duration-300"
             >
               <div className="w-16 h-16 rounded-full bg-theme-accent/15 border border-theme-accent/30 shadow-neon flex items-center justify-center text-theme-accent">
@@ -384,7 +422,7 @@ export const VideoConverter: React.FC<VideoConverterProps> = ({
               <div>
                 <h3 className="text-lg font-semibold text-theme-text">Upload Video Source</h3>
                 <p className="text-xs text-theme-muted mt-2">
-                  Select an MP4, WEBM, or MOV video file. Real-time conversion handles 60 FPS playback loops.
+                  Drag & drop or click to upload MP4, WebM, Ogg, or MOV.
                 </p>
               </div>
             </div>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Type, Copy, Download } from 'lucide-react';
 import { generateTextBanner } from '../../utils/figletFonts';
 import { Button, Slider, Select, useToast } from '../shared/Widgets';
@@ -7,17 +7,10 @@ export const TextGenerator: React.FC = () => {
   const [inputText, setInputText] = useState('ASCII');
   const [activeFont, setActiveFont] = useState('Slant');
   const [letterSpacing, setLetterSpacing] = useState(1);
-  const [bannerOutput, setBannerOutput] = useState('');
+  const bannerOutput = inputText 
+    ? generateTextBanner(inputText, activeFont, letterSpacing) 
+    : '';
   const { showToast } = useToast();
-
-  useEffect(() => {
-    if (inputText) {
-      const banner = generateTextBanner(inputText, activeFont, letterSpacing);
-      setBannerOutput(banner);
-    } else {
-      setBannerOutput('');
-    }
-  }, [inputText, activeFont, letterSpacing]);
 
   const copyToClipboard = () => {
     if (!bannerOutput) return;

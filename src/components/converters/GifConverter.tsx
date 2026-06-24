@@ -93,6 +93,19 @@ export const GifConverter: React.FC<GifConverterProps> = ({
   }, [currentFrameIdx, gifFrames, options, onionSkin]);
 
   const loadGifFile = (file: File) => {
+    // Validate MIME type/extension (must be image/gif)
+    const fileExtension = file.name.split('.').pop()?.toLowerCase();
+    if (file.type !== 'image/gif' && fileExtension !== 'gif') {
+      showToast('Unsupported file type. Please upload an animated GIF.', 'error');
+      return;
+    }
+
+    // Limit GIF size to 15MB
+    if (file.size > 15 * 1024 * 1024) {
+      showToast('GIF file size is too large (maximum 15MB).', 'error');
+      return;
+    }
+
     setLoading(true);
     setLoadingProgress(10);
     setIsPlaying(false);
@@ -455,7 +468,19 @@ export const GifConverter: React.FC<GifConverterProps> = ({
         </div>
 
         {/* Viewport Render Area */}
-        <div className="flex-1 overflow-auto flex items-center justify-center p-6 relative">
+        <div 
+          onDragOver={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+          }}
+          onDrop={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const file = e.dataTransfer.files?.[0];
+            if (file) loadGifFile(file);
+          }}
+          className="flex-1 overflow-auto flex items-center justify-center p-6 relative"
+        >
           {loading ? (
             <div className="flex flex-col items-center gap-3">
               <RefreshCw className="w-8 h-8 text-theme-accent animate-spin" />
@@ -471,6 +496,16 @@ export const GifConverter: React.FC<GifConverterProps> = ({
           ) : (
             <div 
               onClick={() => fileInputRef.current?.click()}
+              onDragOver={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+              }}
+              onDrop={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const file = e.dataTransfer.files?.[0];
+                if (file) loadGifFile(file);
+              }}
               className="glass border border-theme-border/40 rounded-xl p-12 text-center cursor-pointer flex flex-col items-center gap-4 max-w-md hover:bg-white/5 hover:border-theme-accent/30 transition-all duration-300"
             >
               <div className="w-16 h-16 rounded-full bg-theme-accent/15 border border-theme-accent/30 shadow-neon flex items-center justify-center text-theme-accent">
@@ -479,7 +514,7 @@ export const GifConverter: React.FC<GifConverterProps> = ({
               <div>
                 <h3 className="text-lg font-semibold text-theme-text">Upload GIF Source</h3>
                 <p className="text-xs text-theme-muted mt-2">
-                  Import an animated GIF to decompress its buffer map. Play frame-by-frame and control playback speeds instantly.
+                  Drag & drop or click to upload an animated GIF.
                 </p>
               </div>
             </div>

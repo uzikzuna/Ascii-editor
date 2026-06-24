@@ -57,7 +57,7 @@ export const AudioVisualizer: React.FC = () => {
     };
   }, [isPlaying, audioUrl, visType, columns, rows]);
 
-  const setupAudioContext = () => {
+  function setupAudioContext() {
     const audio = audioRef.current;
     if (!audio) return;
 
@@ -119,7 +119,7 @@ export const AudioVisualizer: React.FC = () => {
     }
   };
 
-  const analyzeAndDraw = () => {
+  function analyzeAndDraw() {
     const analyser = analyserRef.current;
     const canvas = canvasRef.current;
     if (!analyser || !canvas) return;

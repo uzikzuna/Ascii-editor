@@ -30,26 +30,36 @@ export const WebcamConverter: React.FC = () => {
   const sampleCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const previewCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const requestRef = useRef<number | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
   const { showToast } = useToast();
+
+  // Sync active stream state to reference
+  useEffect(() => {
+    streamRef.current = activeStream;
+  }, [activeStream]);
+
+  // Handle final teardown of tracks strictly on unmount
+  useEffect(() => {
+    return () => {
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, []);
 
   // Run render loop during capture
   useEffect(() => {
     if (isCapturing && activeStream) {
+      let animId: number;
       const renderLoop = () => {
         renderFrame();
-        requestRef.current = requestAnimationFrame(renderLoop);
+        animId = requestAnimationFrame(renderLoop);
       };
-      requestRef.current = requestAnimationFrame(renderLoop);
-    } else {
-      if (requestRef.current) {
-        cancelAnimationFrame(requestRef.current);
-        requestRef.current = null;
-      }
+      animId = requestAnimationFrame(renderLoop);
+      return () => {
+        cancelAnimationFrame(animId);
+      };
     }
-
-    return () => {
-      stopCamera();
-    };
   }, [isCapturing, activeStream, options]);
 
   const startCamera = async () => {
